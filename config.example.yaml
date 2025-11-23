@@ -1,0 +1,30 @@
+# Example configuration for md2book
+# Copy to another file and customize as needed.
+title: "Distributed Systems"
+author: "Docsmith"
+language: "en"
+font_family: "DejaVu Serif"
+heading_font_family: "DejaVu Sans"
+base_font_size: "12pt"
+heading_color: "#1a1a1a"
+text_color: "#202020"
+background_color: "#ffffff"
+link_color: "#0081a7"
+code_background_color: "#f0f4f8"
+code_border_color: "#d9e2ec"
+line_height: 1.7
+margin_top: "25mm"
+margin_bottom: "25mm"
+margin_left: "20mm"
+margin_right: "20mm"
+page_size: "A4"
+chapter_page_break: true
+toc: true
+extra_css: |
+  /* Additional CSS overrides */
+  img { max-width: 100%; }
+  table { border-collapse: collapse; width: 100%; }
+  table, th, td { border: 1px solid #ccc; }
+metadata:
+  subject: "Generated with md2book"
+  publisher: "md2pdf"
