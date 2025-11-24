@@ -38,7 +38,6 @@ footer_html: |
 exclude_pages:
   - README 
   - _sidebar
-  - ch02
   - ch03
   - ch04
   - ch05

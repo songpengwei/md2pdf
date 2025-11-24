@@ -1,8 +1,8 @@
 import argparse
-import subprocess
-import tempfile
 import mimetypes
 import re
+import subprocess
+import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
@@ -53,9 +53,7 @@ class BookConfig:
     footer_enabled: bool = True
     footer_font_size: str = "10pt"
     footer_border_color: str = "#cccccc"
-    footer_html: str = (
-        "<footer style=\"text-align: center; color: #696773;\"><span><a href=\"https://www.qtmuniao.com/\" style=\"color: #79D9CE;\">作者：木鸟杂记</a>&nbsp; ❄ &nbsp; </span><span><a href=\"https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5NTcxNzY2OQ==&action=getalbum&album_id=2164896217070206977&scene=126&devicetype=iOS15.4&version=18001d33&lang=zh_CN&nettype=WIFI&ascene=59&session_us=gh_80636260f9f9&fontScale=106&wx_header=3\" style=\"color: #FCD765;\">公众号</a>&nbsp; ❄ &nbsp; </span><span><a href=\"https://distsys.cn/\" style=\"color: #F19A97;\">分布式论坛</a>&nbsp; ❄ &nbsp; </span><span><a href=\"https://xiaobot.net/p/system-thinking\" style=\"color: #77AAC2;\">系统技术专栏</a></span></footer>"
-    )
+    footer_html: str = '<footer style="text-align: center; color: #696773;"><span><a href="https://www.qtmuniao.com/" style="color: #79D9CE;">作者：木鸟杂记</a>&nbsp; ❄ &nbsp; </span><span><a href="https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5NTcxNzY2OQ==&action=getalbum&album_id=2164896217070206977&scene=126&devicetype=iOS15.4&version=18001d33&lang=zh_CN&nettype=WIFI&ascene=59&session_us=gh_80636260f9f9&fontScale=106&wx_header=3" style="color: #FCD765;">公众号</a>&nbsp; ❄ &nbsp; </span><span><a href="https://distsys.cn/" style="color: #F19A97;">分布式论坛</a>&nbsp; ❄ &nbsp; </span><span><a href="https://xiaobot.net/p/system-thinking" style="color: #77AAC2;">系统技术专栏</a></span></footer>'
     exclude_pages: List[str] = field(default_factory=lambda: ["readme", "sidebar"])
 
     @classmethod
@@ -82,7 +80,9 @@ def slugify_title(title: str) -> str:
     return slug.lower() or "section"
 
 
-def normalize_heading_ids(html: str, level_one: List[Dict[str, str]], anchor: str) -> Tuple[str, List[Tuple[str, str]]]:
+def normalize_heading_ids(
+    html: str, level_one: List[Dict[str, str]], anchor: str
+) -> Tuple[str, List[Tuple[str, str]]]:
     """Ensure predictable heading ids and return the normalized mapping."""
 
     normalized: List[Tuple[str, str]] = []
@@ -149,10 +149,14 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
         stack.append(node)
 
     def render_nodes(nodes: List[Dict[str, object]]) -> str:
-        return "<ul>" + "".join(
-            f"<li><a href='#{node['id']}'>{node['text']}</a>{render_nodes(node['children'])}</li>"
-            for node in nodes
-        ) + "</ul>"
+        return (
+            "<ul>"
+            + "".join(
+                f"<li><a href='#{node['id']}'>{node['text']}</a>{render_nodes(node['children'])}</li>"
+                for node in nodes
+            )
+            + "</ul>"
+        )
 
     return render_nodes(root["children"])
 
@@ -167,7 +171,11 @@ def discover_images(
     images: List[Tuple[str, epub.EpubItem]] = []
     for match in re.finditer(r"<img[^>]+src=\"([^\"]+)\"", html, flags=re.IGNORECASE):
         src = match.group(1)
-        if src.startswith("http://") or src.startswith("https://") or src.startswith("data:"):
+        if (
+            src.startswith("http://")
+            or src.startswith("https://")
+            or src.startswith("data:")
+        ):
             continue
         resolved = (base_dir / src).resolve()
         if not resolved.exists():
@@ -208,7 +216,9 @@ def discover_markdown_files(paths: Iterable[Path]) -> List[Path]:
 def prioritize_files(files: List[Path]) -> List[Path]:
     """Place preface-like files first while keeping original order otherwise."""
 
-    preface_indices = [idx for idx, path in enumerate(files) if path.stem.lower() == "preface"]
+    preface_indices = [
+        idx for idx, path in enumerate(files) if path.stem.lower() == "preface"
+    ]
     if not preface_indices:
         return files
 
@@ -242,7 +252,9 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
         html = md.convert(markdown_text)
         toc_tokens = md.toc_tokens or []
         level_one = [token for token in toc_tokens if token.get("level") == 1]
-        title = level_one[0]["name"] if level_one else path.stem.replace("_", " ").title()
+        title = (
+            level_one[0]["name"] if level_one else path.stem.replace("_", " ").title()
+        )
         anchor_base = slugify_title(title)
         anchor_suffix = slug_counts.get(anchor_base, 0)
         slug_counts[anchor_base] = anchor_suffix + 1
@@ -265,7 +277,9 @@ def build_css(config: BookConfig) -> str:
     header_title = config.header_title or config.title
     escaped_header_title = (header_title or "").replace("'", "\\'")
     chapter_header_content = "string(chapter-title)"
-    header_content = chapter_header_content if config.header_chapter else f"'{escaped_header_title}'"
+    header_content = (
+        chapter_header_content if config.header_chapter else f"'{escaped_header_title}'"
+    )
 
     header_footer_css = ""
     if config.header_enabled:
@@ -463,7 +477,9 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
 
     base_path = chapters[0].source_path.parent
     toc_headings: List[Tuple[int, str, str]] = []
-    author_html = markdown.markdown(config.author, extensions=["attr_list"], output_format="html5")
+    author_html = markdown.markdown(
+        config.author, extensions=["attr_list"], output_format="html5"
+    )
     body_parts = [
         f"<h1 class='book-title'>{config.title}</h1>",
         f"<div class='book-author'>{author_html}</div>",
@@ -476,7 +492,10 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         anchor = chapter.anchor
         chapter_html = chapter.html
         if "chapter-title" not in chapter_html:
-            chapter_html = f"<h1 id='{anchor}' class='chapter-title'>{chapter.title}</h1>" + chapter_html
+            chapter_html = (
+                f"<h1 id='{anchor}' class='chapter-title'>{chapter.title}</h1>"
+                + chapter_html
+            )
         if config.toc:
             chapter_headings = collect_heading_links(chapter_html)
             if not chapter_headings:
@@ -487,18 +506,31 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         )
 
     if config.toc:
-        toc_html = "<div class='toc'><div class='toc-title'>章节目录</div>" + build_nested_toc(toc_headings) + "</div>"
+        toc_html = (
+            "<div class='toc'><div class='toc-title'>章节目录</div>"
+            + build_nested_toc(toc_headings)
+            + "</div>"
+        )
         body_parts.insert(2, toc_html)
 
     content = "".join(body_parts)
-    return f"<html><head><meta charset='utf-8'></head><body>{content}</body></html>", base_path
+    return (
+        f"<html><head><meta charset='utf-8'></head><body>{content}</body></html>",
+        base_path,
+    )
 
 
-def convert_to_pdf(html_content: str, css: str, output_path: Path, base_url: Path) -> None:
-    HTML(string=html_content, base_url=str(base_url)).write_pdf(stylesheets=[CSS(string=css)], target=str(output_path))
+def convert_to_pdf(
+    html_content: str, css: str, output_path: Path, base_url: Path
+) -> None:
+    HTML(string=html_content, base_url=str(base_url)).write_pdf(
+        stylesheets=[CSS(string=css)], target=str(output_path)
+    )
 
 
-def convert_to_epub(chapters: Sequence[Chapter], config: BookConfig, css: str, output_path: Path) -> None:
+def convert_to_epub(
+    chapters: Sequence[Chapter], config: BookConfig, css: str, output_path: Path
+) -> None:
     book = epub.EpubBook()
     book.set_title(config.title)
     book.set_language(config.language)
@@ -508,16 +540,22 @@ def convert_to_epub(chapters: Sequence[Chapter], config: BookConfig, css: str, o
         book.add_metadata("DC", key, value)
 
     if config.epub_cover and Path(config.epub_cover).exists():
-        book.set_cover(Path(config.epub_cover).name, Path(config.epub_cover).read_bytes())
+        book.set_cover(
+            Path(config.epub_cover).name, Path(config.epub_cover).read_bytes()
+        )
 
-    style = epub.EpubItem(uid="style_nav", file_name="style/nav.css", media_type="text/css", content=css)
+    style = epub.EpubItem(
+        uid="style_nav", file_name="style/nav.css", media_type="text/css", content=css
+    )
     book.add_item(style)
 
     epub_chapters = []
     added_resources: Dict[Path, epub.EpubItem] = {}
     for idx, chapter in enumerate(chapters, start=1):
         chapter_html = chapter.html
-        for original_src, resource in discover_images(chapter_html, chapter.source_path.parent, added_resources):
+        for original_src, resource in discover_images(
+            chapter_html, chapter.source_path.parent, added_resources
+        ):
             book.add_item(resource)
             chapter_html = chapter_html.replace(original_src, resource.file_name)
 
@@ -539,12 +577,18 @@ def convert_to_epub(chapters: Sequence[Chapter], config: BookConfig, css: str, o
     epub.write_epub(str(output_path), book)
 
 
-def resolve_sources(sources: Sequence[str]) -> Tuple[List[Path], Optional[tempfile.TemporaryDirectory]]:
+def resolve_sources(
+    sources: Sequence[str],
+) -> Tuple[List[Path], Optional[tempfile.TemporaryDirectory]]:
     temp_dir: Optional[tempfile.TemporaryDirectory] = None
     paths: List[Path] = []
 
     for src in sources:
-        if src.startswith("http://") or src.startswith("https://") or src.startswith("git@"):
+        if (
+            src.startswith("http://")
+            or src.startswith("https://")
+            or src.startswith("git@")
+        ):
             temp_dir = tempfile.TemporaryDirectory()
             repo_path = clone_repository(src, Path(temp_dir.name))
             paths.append(repo_path)
@@ -555,7 +599,9 @@ def resolve_sources(sources: Sequence[str]) -> Tuple[List[Path], Optional[tempfi
 
 
 def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Convert Markdown sources into PDF or EPUB books.")
+    parser = argparse.ArgumentParser(
+        description="Convert Markdown sources into PDF or EPUB books."
+    )
     parser.add_argument(
         "sources",
         nargs="+",
