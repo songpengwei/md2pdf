@@ -23,6 +23,8 @@ class BookConfig:
     font_family: str = "DejaVu Serif"
     heading_font_family: str = "DejaVu Sans"
     chapter_title_font_family: str = "Georgia"
+    table_font_family: str = "KaiTi"
+    code_font_family: str = "DejaVu Sans Mono"
     base_font_size: str = "12pt"
     heading_color: str = "#77AAC2"
     heading_color_h1: str = "#77AAC2"
@@ -149,14 +151,33 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
         stack.append(node)
 
     def render_nodes(nodes: List[Dict[str, object]]) -> str:
-        return (
-            "<ul>"
-            + "".join(
+        html_parts: List[str] = []
+        in_list = False
+
+        for node in nodes:
+            is_standalone = node["level"] == 1 and not node["children"]
+
+            if is_standalone:
+                if in_list:
+                    html_parts.append("</ul>")
+                    in_list = False
+                html_parts.append(
+                    f"<h2><a href='#{node['id']}'>{node['text']}</a></h2>"
+                )
+                continue
+
+            if not in_list:
+                html_parts.append("<ul>")
+                in_list = True
+
+            html_parts.append(
                 f"<li><a href='#{node['id']}'>{node['text']}</a>{render_nodes(node['children'])}</li>"
-                for node in nodes
             )
-            + "</ul>"
-        )
+
+        if in_list:
+            html_parts.append("</ul>")
+
+        return "".join(html_parts)
 
     return render_nodes(root["children"])
 
@@ -371,7 +392,7 @@ def build_css(config: BookConfig) -> str:
     }}
 
     pre, code {{
-        font-family: 'DejaVu Sans Mono', monospace;
+        font-family: '{config.code_font_family}', monospace;
     }}
 
     pre {{
@@ -409,6 +430,7 @@ def build_css(config: BookConfig) -> str:
 
     th, td {{
         padding: {config.table_cell_padding};
+        font-family: '{config.table_font_family}', serif;
     }}
 
     img {{
