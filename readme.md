@@ -67,6 +67,7 @@ Settings are read from a YAML file. If no file is supplied, defaults are used. S
 - `chapter_page_break` (start each chapter on a new page)
 - `toc` (include a generated table of contents)
 - `header_*` / `footer_*` settings (toggle headers/footers, choose chapter titles, set font sizes, and dashed separators)
+- `url_prefix` (base URL used to build links in running headers back to the online chapters)
 - `extra_css` for last-mile styling tweaks
 - `metadata` (arbitrary EPUB metadata entries)
 - `pdf_cover` (path to an image that will be used as the first page of the PDF)
