@@ -16,7 +16,7 @@ background_color: "#ffffff"
 link_color: "#0081a7"
 code_background_color: "#f0f4f8"
 code_border_color: "#d9e2ec"
-table_cell_padding: "2px"
+table_cell_padding: "6px 12px"
 line_height: 1.7
 margin_top: "25mm"
 margin_bottom: "25mm"

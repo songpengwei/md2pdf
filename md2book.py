@@ -33,7 +33,7 @@ class BookConfig:
     link_color: str = "#1a73e8"
     code_background_color: str = "#f5f5f5"
     code_border_color: str = "#e0e0e0"
-    table_cell_padding: str = "2px"
+    table_cell_padding: str = "6px 12px"
     line_height: float = 1.6
     margin_top: str = "30mm"
     margin_bottom: str = "30mm"
@@ -143,7 +143,7 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
 
     for level, hid, text in headings:
         node = {"level": level, "id": hid, "text": text, "children": []}
-        while stack and level <= stack[-1]["level"]:
+        while len(stack) > 1 and level <= stack[-1]["level"]:
             stack.pop()
         stack[-1]["children"].append(node)
         stack.append(node)
