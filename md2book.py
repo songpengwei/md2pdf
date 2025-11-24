@@ -43,7 +43,11 @@ class BookConfig:
     header_enabled: bool = True
     header_title: Optional[str] = None
     header_chapter: bool = True
+    header_font_size: str = "10pt"
+    header_border_color: str = "#cccccc"
     footer_enabled: bool = True
+    footer_font_size: str = "10pt"
+    footer_border_color: str = "#cccccc"
     footer_html: str = (
         "<footer style=\"text-align: center; color: #696773;\"><span><a href=\"https://www.qtmuniao.com/\" style=\"color: #79D9CE;\">作者：木鸟杂记</a>&nbsp; ❄ &nbsp; </span><span><a href=\"https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5NTcxNzY2OQ==&action=getalbum&album_id=2164896217070206977&scene=126&devicetype=iOS15.4&version=18001d33&lang=zh_CN&nettype=WIFI&ascene=59&session_us=gh_80636260f9f9&fontScale=106&wx_header=3\" style=\"color: #FCD765;\">公众号</a>&nbsp; ❄ &nbsp; </span><span><a href=\"https://distsys.cn/\" style=\"color: #F19A97;\">分布式论坛</a>&nbsp; ❄ &nbsp; </span><span><a href=\"https://xiaobot.net/p/system-thinking\" style=\"color: #77AAC2;\">系统技术专栏</a></span></footer>"
     )
@@ -109,12 +113,16 @@ def normalize_heading_ids(html: str, level_one: List[Dict[str, str]], anchor: st
 
 
 def collect_heading_links(html: str) -> List[Tuple[str, str]]:
-    """Collect normalized level-one headings for TOC linking."""
+    """Collect normalized level-two and deeper headings for TOC linking."""
 
     headings = []
-    for match in re.finditer(r"<h1[^>]*id=\"([^\"]+)\"[^>]*>(.*?)</h1>", html, flags=re.IGNORECASE | re.DOTALL):
-        text = re.sub(r"<[^>]+>", "", match.group(2)).strip()
-        headings.append((match.group(1), text))
+    for match in re.finditer(
+        r"<h([2-6])[^>]*id=\"([^\"]+)\"[^>]*>(.*?)</h\1>",
+        html,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        text = re.sub(r"<[^>]+>", "", match.group(3)).strip()
+        headings.append((match.group(2), text))
     return headings
 
 
@@ -225,12 +233,22 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
 def build_css(config: BookConfig) -> str:
     header_title = config.header_title or config.title
     escaped_header_title = (header_title or "").replace("'", "\\'")
+    header_content = "string(chapter-title)" if config.header_chapter else f"'{escaped_header_title}'"
 
     header_footer_css = ""
     if config.header_enabled:
         header_footer_css += f"""
     h1.chapter-title {{
         string-set: chapter-title content();
+    }}
+
+    @page {{
+        @top-center {{
+            content: {header_content};
+            font-size: {config.header_font_size};
+            border-bottom: 1px dashed {config.header_border_color};
+            padding-bottom: 6px;
+        }}
     }}
 
     @page:left {{
@@ -240,23 +258,24 @@ def build_css(config: BookConfig) -> str:
     }}
 
     @page:right {{
-        @top-center {{
-            content: {"string(chapter-title)" if config.header_chapter else f"'{escaped_header_title}'"};
-        }}
+        @top-center {{ content: {header_content}; }}
     }}
         """
 
     if config.footer_enabled:
-        header_footer_css += """
-    .page-footer {
+        header_footer_css += f"""
+    .page-footer {{
         position: running(page-footer);
-    }
+        font-size: {config.footer_font_size};
+        border-top: 1px dashed {config.footer_border_color};
+        padding-top: 6px;
+    }}
 
-    @page {
-        @bottom-center {
+    @page {{
+        @bottom-center {{
             content: element(page-footer);
-        }
-    }
+        }}
+    }}
         """
 
     return f"""
@@ -316,6 +335,7 @@ def build_css(config: BookConfig) -> str:
     }}
 
     .chapter {{
+        page-break-before: {"always" if config.chapter_page_break else "auto"};
         page-break-after: {"always" if config.chapter_page_break else "auto"};
     }}
 

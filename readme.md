@@ -58,6 +58,7 @@ Settings are read from a YAML file. If no file is supplied, defaults are used. S
 - `page_size`, `margin_top`, `margin_bottom`, `margin_left`, `margin_right`
 - `chapter_page_break` (start each chapter on a new page)
 - `toc` (include a generated table of contents)
+- `header_*` / `footer_*` settings (toggle headers/footers, choose chapter titles, set font sizes, and dashed separators)
 - `extra_css` for last-mile styling tweaks
 - `metadata` (arbitrary EPUB metadata entries)
 - `epub_cover` (path to an image for the EPUB cover)
