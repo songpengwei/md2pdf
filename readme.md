@@ -48,6 +48,12 @@ Process a directory tree of documentation:
 python md2book.py ./docs --format epub
 ```
 
+Use an image file as the first-page PDF cover:
+
+```bash
+python md2book.py intro.md --pdf-cover ./cover.png
+```
+
 ## Configuration
 
 Settings are read from a YAML file. If no file is supplied, defaults are used. See `config.example.yaml` for a full list of options. Key fields include:
@@ -63,6 +69,7 @@ Settings are read from a YAML file. If no file is supplied, defaults are used. S
 - `header_*` / `footer_*` settings (toggle headers/footers, choose chapter titles, set font sizes, and dashed separators)
 - `extra_css` for last-mile styling tweaks
 - `metadata` (arbitrary EPUB metadata entries)
+- `pdf_cover` (path to an image that will be used as the first page of the PDF)
 - `epub_cover` (path to an image for the EPUB cover)
 
 ## Output

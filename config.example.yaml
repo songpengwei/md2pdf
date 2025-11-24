@@ -48,3 +48,5 @@ extra_css: |
 metadata:
   subject: "Generated with md2book"
   publisher: "md2pdf"
+pdf_cover: "./cover.jpg"
+epub_cover: "./cover.jpg"
