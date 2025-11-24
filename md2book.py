@@ -431,7 +431,7 @@ def resolve_sources(sources: Sequence[str]) -> Tuple[List[Path], Optional[tempfi
     paths: List[Path] = []
 
     for src in sources:
-        if src.startswith("http://") or src.startswith("https://"):
+        if src.startswith("http://") or src.startswith("https://") or src.startswith("git@"):
             temp_dir = tempfile.TemporaryDirectory()
             repo_path = clone_repository(src, Path(temp_dir.name))
             paths.append(repo_path)
