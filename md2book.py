@@ -1,4 +1,5 @@
 import argparse
+import html
 import mimetypes
 import re
 import subprocess
@@ -22,25 +23,19 @@ class BookConfig:
     author: str = "md2pdf"
     language: str = "en"
     font_family: str = (
-        '"Source Han Serif SC", "Noto Serif CJK SC", "思源宋体 CN", '
-        '"Songti SC", "STSong", "SimSun", "Times New Roman", "Georgia", '
-        '"Palatino Linotype", "STIX Two Text", serif'
+        '"Source Han Serif SC", "Noto Serif CJK SC", "STSong", "SimSun", '
+        '"Times New Roman", "Georgia", "Palatino Linotype", "STIX Two Text", serif'
     )
     heading_font_family: str = (
-        '"Source Han Sans SC", "Noto Sans CJK SC", "思源黑体 CN", '
-        '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", '
-        '"Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
+        '"Source Han Sans SC", "Noto Sans CJK SC", "PingFang SC", "Hiragino Sans GB", '
+        '"Microsoft YaHei", "Heiti SC", "Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
     )
-    chapter_title_font_family: str = (
-        '"Source Han Sans SC", "Noto Sans CJK SC", "思源黑体 CN", '
-        '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", '
-        '"Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
-    )
+    chapter_title_font_family: str = heading_font_family
     table_font_family: str = (
-        '"Kaiti SC", "STKaiti", "KaiTi", "BiauKai", "Kai", serif'
+        '"Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", serif'
     )
     code_font_family: str = (
-        '"Kaiti SC", "STKaiti", "KaiTi", "BiauKai", "Kai", monospace'
+        '"Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", "Courier New", monospace'
     )
     base_font_size: str = "12pt"
     heading_color: str = "#77AAC2"
@@ -70,6 +65,7 @@ class BookConfig:
     header_chapter: bool = True
     header_font_size: str = "10pt"
     header_border_color: str = "#cccccc"
+    url_prefix: str = "https://ddia.qtmuniao.com/#/"
     footer_enabled: bool = True
     footer_font_size: str = "10pt"
     footer_border_color: str = "#cccccc"
@@ -404,6 +400,7 @@ def build_css(config: BookConfig) -> str:
         color: {config.text_color};
         background: {config.background_color};
         line-height: {config.line_height};
+        counter-reset: page 0;
     }}
 
     h1 {{
@@ -525,7 +522,7 @@ def build_css(config: BookConfig) -> str:
 
     .chapter {{
         page-break-before: {"always" if config.chapter_page_break else "auto"};
-        page-break-after: {"always" if config.chapter_page_break else "auto"};
+        page-break-after: auto;
     }}
 
     .pdf-cover {{
@@ -549,6 +546,7 @@ def build_css(config: BookConfig) -> str:
         @top-left {{
             content: none;
         }}
+        counter-increment: none;
     }}
 
     .toc-title {{
@@ -597,17 +595,11 @@ def build_css(config: BookConfig) -> str:
         overflow: hidden;
     }}
 
-    .page-number-reset {{
-        counter-reset: page 0;
-        height: 0;
-        overflow: hidden;
-        visibility: hidden;
+    .chapter-header-title a {{
+        color: inherit;
+        text-decoration: none;
     }}
 
-    .page-number-reset--after-toc {{
-        page-break-after: always;
-        counter-reset: page 0;
-    }}
     {header_footer_css}
     {config.extra_css}
     """
@@ -661,7 +653,13 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
             if not chapter_headings:
                 chapter_headings = [(1, anchor, chapter.title)]
             toc_headings.extend(chapter_headings)
-        header_marker = f"<div class='chapter-header-title'>{chapter.title}</div>"
+        chapter_url = f"{config.url_prefix.rstrip('/')}/{chapter.anchor}"
+        safe_title = html.escape(chapter.title)
+        header_marker = (
+            "<div class='chapter-header-title'>"
+            f"<a href='{chapter_url}'>{safe_title}</a>"
+            "</div>"
+        )
         body_parts.append(
             f"<section id='{anchor}' class='chapter'>{header_marker}{chapter_html}</section>"
         )
@@ -675,10 +673,6 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         body_parts.insert(
             toc_insert_index,
             toc_html.replace("class='toc'", "class='toc no-page-number'"),
-        )
-        body_parts.insert(
-            toc_insert_index + 1,
-            "<div class='page-number-reset page-number-reset--after-toc'></div>",
         )
 
     content = "".join(body_parts)
@@ -792,7 +786,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "-f",
         "--format",
-        choices=["pdf", "epub", "both"],
+        choices=["pdf", "epub", "both", "html", "all"],
         default="pdf",
         help="Choose the output format.",
     )
@@ -803,6 +797,19 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         help="Path to an image that will be placed on the first PDF page as a cover.",
     )
     return parser.parse_args(argv)
+
+
+def convert_to_html(
+    html_content: str, css: str, output_path: Path, base_url: Path
+) -> None:
+    head_injection = f"<style>{css}</style><base href='{base_url.as_uri()}/'>"
+    if "</head>" in html_content:
+        styled_html = html_content.replace("</head>", f"{head_injection}</head>", 1)
+    else:
+        styled_html = (
+            f"<head><meta charset='utf-8'>{head_injection}</head>" + html_content
+        )
+    output_path.write_text(styled_html, encoding="utf-8")
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
@@ -829,13 +836,22 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
         chapters = load_chapters(markdown_files)
         css = build_css(config)
 
-        if args.format in {"pdf", "both"}:
+        html_content: Optional[str] = None
+        base_url: Optional[Path] = None
+        if args.format in {"pdf", "both", "html", "all"}:
             html_content, base_url = render_html(chapters, config)
+
+        if args.format in {"pdf", "both", "all"} and html_content and base_url:
             pdf_path = args.output.with_suffix(".pdf")
             convert_to_pdf(html_content, css, pdf_path, base_url)
             print(f"PDF created at {pdf_path}")
 
-        if args.format in {"epub", "both"}:
+        if args.format in {"html", "all"} and html_content and base_url:
+            html_path = args.output.with_suffix(".html")
+            convert_to_html(html_content, css, html_path, base_url)
+            print(f"HTML created at {html_path}")
+
+        if args.format in {"epub", "both", "all"}:
             epub_path = args.output.with_suffix(".epub")
             convert_to_epub(chapters, config, css, epub_path)
             print(f"EPUB created at {epub_path}")
