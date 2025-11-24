@@ -372,7 +372,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         )
 
     if config.toc:
-        toc_html = "<div class='toc'><div class='toc-title'>Contents</div><ul class='toc-list'>" + "".join(
+        toc_html = "<div class='toc'><div class='toc-title'>章节目录</div><ul class='toc-list'>" + "".join(
             toc_entries
         ) + "</ul></div>"
         body_parts.insert(2, toc_html)

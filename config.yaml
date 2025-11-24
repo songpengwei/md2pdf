@@ -1,10 +1,10 @@
 # Example configuration for md2book
 # Copy to another file and customize as needed.
-title: "Distributed Systems"
-author: "Docsmith"
-language: "en"
-font_family: "DejaVu Serif"
-heading_font_family: "DejaVu Sans"
+title: "DDIA 逐章精读"
+author: "[木鸟杂记](https://www.qtmuniao.com/)"
+language: "zh-CN"
+font_family: "Source Sans Pro, Helvetica Neue, Arial, sans-serif"
+heading_font_family: "Source Sans Pro, Helvetica Neue, Arial, sans-serif"
 base_font_size: "12pt"
 heading_color: "#1a1a1a"
 text_color: "#202020"
@@ -27,8 +27,8 @@ footer_enabled: true
 footer_html: |
   <footer style="text-align: center; color: #696773;"><span><a href="https://www.qtmuniao.com/" style="color: #79D9CE;">作者：木鸟杂记</a>&nbsp; ❄ &nbsp; </span><span><a href="https://mp.weixin.qq.com/mp/appmsgalbum?__biz=Mzg5NTcxNzY2OQ==&action=getalbum&album_id=2164896217070206977&scene=126&devicetype=iOS15.4&version=18001d33&lang=zh_CN&nettype=WIFI&ascene=59&session_us=gh_80636260f9f9&fontScale=106&wx_header=3" style="color: #FCD765;">公众号</a>&nbsp; ❄ &nbsp; </span><span><a href="https://distsys.cn/" style="color: #F19A97;">分布式论坛</a>&nbsp; ❄ &nbsp; </span><span><a href="https://xiaobot.net/p/system-thinking" style="color: #77AAC2;">系统技术专栏</a></span></footer>
 exclude_pages:
-  - readme
-  - sidebar
+  - README 
+  - _sidebar
   - ch02
   - ch03
   - ch04
