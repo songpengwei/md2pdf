@@ -3,9 +3,21 @@
 title: "DDIA 逐章精读"
 author: "[木鸟杂记](https://www.qtmuniao.com/)"
 language: "zh-CN"
-font_family: "Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-heading_font_family: "Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-chapter_title_font_family: "Merriweather, Georgia, serif"
+font_family: |
+  "Source Han Serif SC", "Noto Serif CJK SC", "思源宋体 CN",
+  "Songti SC", "STSong", "SimSun",
+  "Times New Roman", "Georgia", "Palatino Linotype", "STIX Two Text",
+  serif
+heading_font_family: |
+  "Source Han Sans SC", "Noto Sans CJK SC", "思源黑体 CN",
+  "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC",
+  "Segoe UI", "Helvetica Neue", "Roboto", "Arial",
+  sans-serif
+chapter_title_font_family: |
+  "Source Han Sans SC", "Noto Sans CJK SC", "思源黑体 CN",
+  "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC",
+  "Segoe UI", "Helvetica Neue", "Roboto", "Arial",
+  sans-serif
 table_font_family: "KaiTi, STKaiti, STSong, serif"
 code_font_family: "JetBrains Mono, Fira Code, DejaVu Sans Mono, monospace"
 base_font_size: "12pt"
