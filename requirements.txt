@@ -1,0 +1,4 @@
+markdown==3.6
+PyYAML==6.0.2
+WeasyPrint==61.2
+EbookLib==0.18
