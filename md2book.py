@@ -36,8 +36,12 @@ class BookConfig:
         '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", '
         '"Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
     )
-    table_font_family: str = "KaiTi"
-    code_font_family: str = "DejaVu Sans Mono"
+    table_font_family: str = (
+        '"Kaiti SC", "STKaiti", "KaiTi", "BiauKai", "Kai", serif'
+    )
+    code_font_family: str = (
+        '"Kaiti SC", "STKaiti", "KaiTi", "BiauKai", "Kai", monospace'
+    )
     base_font_size: str = "12pt"
     heading_color: str = "#77AAC2"
     heading_color_h1: str = "#77AAC2"
@@ -376,6 +380,17 @@ def build_css(config: BookConfig) -> str:
     @page {{
         size: {config.page_size};
         margin: {config.margin_top} {config.margin_right} {config.margin_bottom} {config.margin_left};
+        counter-increment: page;
+    }}
+
+    @page:left {{
+        @top-left {{
+            content: counter(page);
+            font-size: {config.header_font_size};
+        }}
+    }}
+
+    @page:right {{
         @top-right {{
             content: counter(page);
             font-size: {config.header_font_size};
@@ -432,7 +447,8 @@ def build_css(config: BookConfig) -> str:
     }}
 
     pre, code {{
-        font-family: '{config.code_font_family}', monospace;
+        font-family:
+          {config.code_font_family};
     }}
 
     pre {{
@@ -476,7 +492,8 @@ def build_css(config: BookConfig) -> str:
 
     th, td {{
         padding: {config.table_cell_padding};
-        font-family: '{config.table_font_family}', serif;
+        font-family:
+          {config.table_font_family};
     }}
 
     img {{
@@ -527,6 +544,9 @@ def build_css(config: BookConfig) -> str:
 
     @page no-number {{
         @top-right {{
+            content: none;
+        }}
+        @top-left {{
             content: none;
         }}
     }}
@@ -586,6 +606,7 @@ def build_css(config: BookConfig) -> str:
 
     .page-number-reset--after-toc {{
         page-break-after: always;
+        counter-reset: page 0;
     }}
     {header_footer_css}
     {config.extra_css}
