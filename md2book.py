@@ -10,6 +10,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 import markdown
 import yaml
 from ebooklib import epub
+from tqdm import tqdm
 from weasyprint import CSS, HTML
 
 
@@ -20,9 +21,21 @@ class BookConfig:
     title: str = "Generated Book"
     author: str = "md2pdf"
     language: str = "en"
-    font_family: str = "DejaVu Serif"
-    heading_font_family: str = "DejaVu Sans"
-    chapter_title_font_family: str = "Georgia"
+    font_family: str = (
+        '"Source Han Serif SC", "Noto Serif CJK SC", "思源宋体 CN", '
+        '"Songti SC", "STSong", "SimSun", "Times New Roman", "Georgia", '
+        '"Palatino Linotype", "STIX Two Text", serif'
+    )
+    heading_font_family: str = (
+        '"Source Han Sans SC", "Noto Sans CJK SC", "思源黑体 CN", '
+        '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", '
+        '"Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
+    )
+    chapter_title_font_family: str = (
+        '"Source Han Sans SC", "Noto Sans CJK SC", "思源黑体 CN", '
+        '"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Heiti SC", '
+        '"Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
+    )
     table_font_family: str = "KaiTi"
     code_font_family: str = "DejaVu Sans Mono"
     base_font_size: str = "12pt"
@@ -309,6 +322,10 @@ def build_css(config: BookConfig) -> str:
         string-set: chapter-title content();
     }}
 
+    .chapter-header-title {{
+        string-set: chapter-title content();
+    }}
+
     @page {{
         @top-center {{
             content: {header_content};
@@ -355,7 +372,8 @@ def build_css(config: BookConfig) -> str:
     }}
 
     body {{
-        font-family: '{config.font_family}', serif;
+        font-family:
+          {config.font_family};
         font-size: {config.base_font_size};
         color: {config.text_color};
         background: {config.background_color};
@@ -363,25 +381,29 @@ def build_css(config: BookConfig) -> str:
     }}
 
     h1 {{
-        font-family: '{config.heading_font_family}', sans-serif;
+        font-family:
+          {config.heading_font_family};
         color: {config.heading_color_h1};
         margin-top: 1.4em;
     }}
 
     h2 {{
-        font-family: '{config.heading_font_family}', sans-serif;
+        font-family:
+          {config.heading_font_family};
         color: {config.heading_color_h2};
         margin-top: 1.4em;
     }}
 
     h3 {{
-        font-family: '{config.heading_font_family}', sans-serif;
+        font-family:
+          {config.heading_font_family};
         color: {config.heading_color_h3};
         margin-top: 1.2em;
     }}
 
     h4, h5, h6 {{
-        font-family: '{config.heading_font_family}', sans-serif;
+        font-family:
+          {config.heading_font_family};
         color: {config.heading_color};
         margin-top: 1.1em;
     }}
@@ -397,7 +419,7 @@ def build_css(config: BookConfig) -> str:
 
     pre {{
         background: {config.code_background_color};
-        border: 1px solid {config.code_border_color};
+        border: 1px dashed {config.code_border_color};
         padding: 12px;
         border-radius: 4px;
         overflow-x: auto;
@@ -413,10 +435,16 @@ def build_css(config: BookConfig) -> str:
     }}
 
     blockquote {{
-        border-left: 4px solid {config.link_color};
+        border-left: 4px dashed {config.link_color};
         padding-left: 12px;
         color: #555;
         margin-left: 0;
+    }}
+
+    hr {{
+        border: none;
+        border-top: 1px dashed {config.code_border_color};
+        margin: 24px 0;
     }}
 
     table {{
@@ -486,7 +514,15 @@ def build_css(config: BookConfig) -> str:
 
     .chapter-title {{
         text-align: center;
-        font-family: '{config.chapter_title_font_family}', sans-serif;
+        font-family:
+          {config.chapter_title_font_family};
+    }}
+
+    .chapter-header-title {{
+        string-set: chapter-title content();
+        visibility: hidden;
+        height: 0;
+        overflow: hidden;
     }}
     {header_footer_css}
     {config.extra_css}
@@ -510,7 +546,9 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
     if config.footer_enabled:
         body_parts.append(f"<div class='page-footer'>{config.footer_html}</div>")
 
-    for idx, chapter in enumerate(chapters, start=1):
+    for idx, chapter in enumerate(
+        tqdm(chapters, desc="Rendering chapters", unit="chapter"), start=1
+    ):
         anchor = chapter.anchor
         chapter_html = chapter.html
         if "chapter-title" not in chapter_html:
@@ -523,8 +561,9 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
             if not chapter_headings:
                 chapter_headings = [(1, anchor, chapter.title)]
             toc_headings.extend(chapter_headings)
+        header_marker = f"<div class='chapter-header-title'>{chapter.title}</div>"
         body_parts.append(
-            f"<section id='{anchor}' class='chapter'>{chapter_html}</section>"
+            f"<section id='{anchor}' class='chapter'>{header_marker}{chapter_html}</section>"
         )
 
     if config.toc:
