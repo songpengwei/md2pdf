@@ -34,9 +34,7 @@ class BookConfig:
     table_font_family: str = (
         '"Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", serif'
     )
-    code_font_family: str = (
-        '"Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", "Courier New", monospace'
-    )
+    code_font_family: str = '"Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", "Courier New", monospace'
     base_font_size: str = "12pt"
     heading_color: str = "#77AAC2"
     heading_color_h1: str = "#77AAC2"
@@ -185,7 +183,7 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
 
             if node["level"] == 1:
                 html_parts.append(
-                    f"<h2><a href='#{node['id']}'>{node['text']}</a></h2>{children_html}"
+                    f"<h4><a href='#{node['id']}'>{node['text']}</a></h4>{children_html}"
                 )
             else:
                 html_parts.append(
