@@ -163,32 +163,33 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
         stack[-1]["children"].append(node)
         stack.append(node)
 
-    def render_nodes(nodes: List[Dict[str, object]]) -> str:
-        html_parts: List[str] = []
-        in_list = False
+    def render_children(nodes: List[Dict[str, object]]) -> str:
+        if not nodes:
+            return ""
 
+        items: List[str] = []
         for node in nodes:
-            is_standalone = node["level"] == 1 and not node["children"]
-
-            if is_standalone:
-                if in_list:
-                    html_parts.append("</ul>")
-                    in_list = False
-                html_parts.append(
-                    f"<h2><a href='#{node['id']}'>{node['text']}</a></h2>"
-                )
-                continue
-
-            if not in_list:
-                html_parts.append("<ul>")
-                in_list = True
-
-            html_parts.append(
-                f"<li><a href='#{node['id']}'>{node['text']}</a>{render_nodes(node['children'])}</li>"
+            children_html = render_children(node["children"])
+            items.append(
+                f"<li><a href='#{node['id']}'>{node['text']}</a>{children_html}</li>"
             )
 
-        if in_list:
-            html_parts.append("</ul>")
+        return f"<ul>{''.join(items)}</ul>"
+
+    def render_nodes(nodes: List[Dict[str, object]]) -> str:
+        html_parts: List[str] = []
+
+        for node in nodes:
+            children_html = render_children(node["children"])
+
+            if node["level"] == 1:
+                html_parts.append(
+                    f"<h2><a href='#{node['id']}'>{node['text']}</a></h2>{children_html}"
+                )
+            else:
+                html_parts.append(
+                    f"<li><a href='#{node['id']}'>{node['text']}</a>{children_html}</li>"
+                )
 
         return "".join(html_parts)
 
@@ -308,13 +309,6 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
 
 
 def build_css(config: BookConfig) -> str:
-    header_title = config.header_title or config.title
-    escaped_header_title = (header_title or "").replace("'", "\\'")
-    chapter_header_content = "string(chapter-title)"
-    header_content = (
-        chapter_header_content if config.header_chapter else f"'{escaped_header_title}'"
-    )
-
     header_footer_css = ""
     if config.header_enabled:
         header_footer_css += f"""
@@ -324,25 +318,37 @@ def build_css(config: BookConfig) -> str:
 
     .chapter-header-title {{
         string-set: chapter-title content();
+        position: running(page-header);
+        font-size: {config.header_font_size};
+        text-align: center;
+        display: inline-block;
+        padding-bottom: 6px;
+        border-bottom: 1px dashed {config.header_border_color};
+        visibility: visible;
+        height: auto;
+        overflow: visible;
+        margin: 0 auto;
     }}
 
     @page {{
         @top-center {{
-            content: {header_content};
-            font-size: {config.header_font_size};
-            border-bottom: 1px dashed {config.header_border_color};
-            padding-bottom: 6px;
+            content: element(page-header);
+            text-align: center;
         }}
     }}
 
     @page:left {{
         @top-center {{
-            content: {header_content};
+            content: element(page-header);
+            text-align: center;
         }}
     }}
 
     @page:right {{
-        @top-center {{ content: {header_content}; }}
+        @top-center {{
+            content: element(page-header);
+            text-align: center;
+        }}
     }}
         """
 
@@ -413,6 +419,13 @@ def build_css(config: BookConfig) -> str:
         text-decoration: none;
     }}
 
+    em, i {{
+        font-style: italic;
+        font-family:
+          {config.font_family};
+        font-synthesis: style;
+    }}
+
     pre, code {{
         font-family: '{config.code_font_family}', monospace;
     }}
@@ -435,7 +448,7 @@ def build_css(config: BookConfig) -> str:
     }}
 
     blockquote {{
-        border-left: 4px dashed {config.link_color};
+        border-left: 4px solid {config.link_color};
         padding-left: 12px;
         color: #555;
         margin-left: 0;
@@ -516,6 +529,10 @@ def build_css(config: BookConfig) -> str:
         text-align: center;
         font-family:
           {config.chapter_title_font_family};
+    }}
+
+    .chapter > h1:first-of-type {{
+        text-align: center;
     }}
 
     .chapter-header-title {{
