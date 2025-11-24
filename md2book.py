@@ -118,11 +118,11 @@ def normalize_heading_ids(html: str, level_one: List[Dict[str, str]], anchor: st
 
 
 def collect_heading_links(html: str) -> List[Tuple[int, str, str]]:
-    """Collect normalized level-two and deeper headings for TOC linking."""
+    """Collect normalized level-one and level-two headings for TOC linking."""
 
     headings: List[Tuple[int, str, str]] = []
     for match in re.finditer(
-        r"<h([2-6])[^>]*id=\"([^\"]+)\"[^>]*>(.*?)</h\1>",
+        r"<h([1-2])[^>]*id=\"([^\"]+)\"[^>]*>(.*?)</h\1>",
         html,
         flags=re.IGNORECASE | re.DOTALL,
     ):
@@ -301,6 +301,9 @@ def build_css(config: BookConfig) -> str:
         font-size: {config.footer_font_size};
         border-top: 1px dashed {config.footer_border_color};
         padding-top: 6px;
+        width: 100%;
+        box-sizing: border-box;
+        display: block;
     }}
 
     @page {{
@@ -363,6 +366,15 @@ def build_css(config: BookConfig) -> str:
         padding: 12px;
         border-radius: 4px;
         overflow-x: auto;
+        font-size: clamp(10px, 0.95em, 1em);
+        box-sizing: border-box;
+    }}
+
+    pre code {{
+        display: block;
+        font-size: clamp(10px, 0.9em, 0.95em);
+        white-space: pre-wrap;
+        word-break: break-word;
     }}
 
     blockquote {{
@@ -383,6 +395,17 @@ def build_css(config: BookConfig) -> str:
 
     th, td {{
         padding: {config.table_cell_padding};
+    }}
+
+    img {{
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 100%;
+    }}
+
+    figure {{
+        text-align: center;
     }}
 
     .book-title {{
@@ -439,7 +462,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         raise ValueError("No Markdown content found to render")
 
     base_path = chapters[0].source_path.parent
-    toc_entries = []
+    toc_headings: List[Tuple[int, str, str]] = []
     author_html = markdown.markdown(config.author, extensions=["attr_list"], output_format="html5")
     body_parts = [
         f"<h1 class='book-title'>{config.title}</h1>",
@@ -455,20 +478,16 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         if "chapter-title" not in chapter_html:
             chapter_html = f"<h1 id='{anchor}' class='chapter-title'>{chapter.title}</h1>" + chapter_html
         if config.toc:
-            chapter_entry = f"<li><a href='#{anchor}'>{chapter.title}</a>"
             chapter_headings = collect_heading_links(chapter_html)
-            if chapter_headings:
-                chapter_entry += build_nested_toc(chapter_headings)
-            chapter_entry += "</li>"
-            toc_entries.append(chapter_entry)
+            if not chapter_headings:
+                chapter_headings = [(1, anchor, chapter.title)]
+            toc_headings.extend(chapter_headings)
         body_parts.append(
             f"<section id='{anchor}' class='chapter'>{chapter_html}</section>"
         )
 
     if config.toc:
-        toc_html = "<div class='toc'><div class='toc-title'>章节目录</div><ul class='toc-list'>" + "".join(
-            toc_entries
-        ) + "</ul></div>"
+        toc_html = "<div class='toc'><div class='toc-title'>章节目录</div>" + build_nested_toc(toc_headings) + "</div>"
         body_parts.insert(2, toc_html)
 
     content = "".join(body_parts)
