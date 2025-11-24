@@ -59,6 +59,7 @@ class BookConfig:
     toc: bool = True
     extra_css: str = ""
     epub_cover: Optional[str] = None
+    pdf_cover: Optional[str] = None
     metadata: Dict[str, str] = field(default_factory=dict)
     header_enabled: bool = True
     header_title: Optional[str] = None
@@ -375,6 +376,10 @@ def build_css(config: BookConfig) -> str:
     @page {{
         size: {config.page_size};
         margin: {config.margin_top} {config.margin_right} {config.margin_bottom} {config.margin_left};
+        @top-right {{
+            content: counter(page);
+            font-size: {config.header_font_size};
+        }}
     }}
 
     body {{
@@ -506,6 +511,26 @@ def build_css(config: BookConfig) -> str:
         page-break-after: {"always" if config.chapter_page_break else "auto"};
     }}
 
+    .pdf-cover {{
+        page-break-after: always;
+        text-align: center;
+    }}
+
+    .pdf-cover img {{
+        max-width: 100%;
+        height: auto;
+    }}
+
+    .no-page-number {{
+        page: no-number;
+    }}
+
+    @page no-number {{
+        @top-right {{
+            content: none;
+        }}
+    }}
+
     .toc-title {{
         font-size: 1.6em;
         font-weight: bold;
@@ -525,6 +550,16 @@ def build_css(config: BookConfig) -> str:
         padding-left: 20px;
     }}
 
+    .toc {{
+        page-break-after: always;
+    }}
+
+    .toc a::after {{
+        content: leader('.') target-counter(attr(href), page);
+        float: right;
+        color: {config.text_color};
+    }}
+
     .chapter-title {{
         text-align: center;
         font-family:
@@ -541,6 +576,17 @@ def build_css(config: BookConfig) -> str:
         height: 0;
         overflow: hidden;
     }}
+
+    .page-number-reset {{
+        counter-reset: page 0;
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+    }}
+
+    .page-number-reset--after-toc {{
+        page-break-after: always;
+    }}
     {header_footer_css}
     {config.extra_css}
     """
@@ -555,13 +601,29 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
     author_html = markdown.markdown(
         config.author, extensions=["attr_list"], output_format="html5"
     )
-    body_parts = [
-        f"<h1 class='book-title'>{config.title}</h1>",
-        f"<div class='book-author'>{author_html}</div>",
-    ]
+    body_parts: List[str] = []
+
+    if config.pdf_cover:
+        cover_path = Path(config.pdf_cover).expanduser()
+        if not cover_path.is_absolute():
+            cover_path = (base_path / cover_path).resolve()
+        if not cover_path.exists():
+            raise FileNotFoundError(f"PDF cover image not found: {cover_path}")
+        body_parts.append(
+            f"<div class='pdf-cover no-page-number'><img src='{cover_path.as_uri()}' alt='Book cover'></div>"
+        )
+
+    body_parts.append(
+        "<div class='book-meta no-page-number'>"
+        f"<h1 class='book-title'>{config.title}</h1>"
+        f"<div class='book-author'>{author_html}</div>"
+        "</div>"
+    )
 
     if config.footer_enabled:
         body_parts.append(f"<div class='page-footer'>{config.footer_html}</div>")
+
+    toc_insert_index = len(body_parts)
 
     for idx, chapter in enumerate(
         tqdm(chapters, desc="Rendering chapters", unit="chapter"), start=1
@@ -589,7 +651,14 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
             + build_nested_toc(toc_headings)
             + "</div>"
         )
-        body_parts.insert(2, toc_html)
+        body_parts.insert(
+            toc_insert_index,
+            toc_html.replace("class='toc'", "class='toc no-page-number'"),
+        )
+        body_parts.insert(
+            toc_insert_index + 1,
+            "<div class='page-number-reset page-number-reset--after-toc'></div>",
+        )
 
     content = "".join(body_parts)
     return (
@@ -706,12 +775,20 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
         default="pdf",
         help="Choose the output format.",
     )
+    parser.add_argument(
+        "--pdf-cover",
+        type=Path,
+        default=None,
+        help="Path to an image that will be placed on the first PDF page as a cover.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
     args = parse_args(argv)
     config = BookConfig.from_yaml(args.config)
+    if args.pdf_cover is not None:
+        config.pdf_cover = str(args.pdf_cover.expanduser())
     source_paths, temp_dir = resolve_sources(args.sources)
 
     try:
@@ -730,9 +807,9 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
         chapters = load_chapters(markdown_files)
         css = build_css(config)
-        html_content, base_url = render_html(chapters, config)
 
         if args.format in {"pdf", "both"}:
+            html_content, base_url = render_html(chapters, config)
             pdf_path = args.output.with_suffix(".pdf")
             convert_to_pdf(html_content, css, pdf_path, base_url)
             print(f"PDF created at {pdf_path}")
