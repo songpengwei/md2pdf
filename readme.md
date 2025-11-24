@@ -56,7 +56,7 @@ Settings are read from a YAML file. If no file is supplied, defaults are used. S
 - `font_family`, `heading_font_family`, `chapter_title_font_family`, `base_font_size`, `line_height`
 - `heading_color`, `heading_color_h1`, `heading_color_h2`, `heading_color_h3` (per-level heading colors; default `#77AAC2`)
 - `text_color`, `background_color`, `link_color`
-- `table_cell_padding` (default `2px` for th/td padding)
+- `table_cell_padding` (default `6px 12px` for th/td padding)
 - `page_size`, `margin_top`, `margin_bottom`, `margin_left`, `margin_right`
 - `chapter_page_break` (start each chapter on a new page)
 - `toc` (include a generated table of contents)
