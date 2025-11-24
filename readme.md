@@ -52,9 +52,11 @@ python md2book.py ./docs --format epub
 
 Settings are read from a YAML file. If no file is supplied, defaults are used. See `config.example.yaml` for a full list of options. Key fields include:
 
-- `title`, `author`, `language`
-- `font_family`, `heading_font_family`, `base_font_size`, `line_height`
+- `title`, `author`, `language` (authors accept Markdown for inline links/emphasis)
+- `font_family`, `heading_font_family`, `chapter_title_font_family`, `base_font_size`, `line_height`
+- `heading_color`, `heading_color_h1`, `heading_color_h2`, `heading_color_h3` (per-level heading colors; default `#77AAC2`)
 - `text_color`, `background_color`, `link_color`
+- `table_cell_padding` (default `2px` for th/td padding)
 - `page_size`, `margin_top`, `margin_bottom`, `margin_left`, `margin_right`
 - `chapter_page_break` (start each chapter on a new page)
 - `toc` (include a generated table of contents)

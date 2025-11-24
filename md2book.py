@@ -22,13 +22,18 @@ class BookConfig:
     language: str = "en"
     font_family: str = "DejaVu Serif"
     heading_font_family: str = "DejaVu Sans"
+    chapter_title_font_family: str = "Georgia"
     base_font_size: str = "12pt"
-    heading_color: str = "#222222"
+    heading_color: str = "#77AAC2"
+    heading_color_h1: str = "#77AAC2"
+    heading_color_h2: str = "#77AAC2"
+    heading_color_h3: str = "#77AAC2"
     text_color: str = "#111111"
     background_color: str = "#ffffff"
     link_color: str = "#1a73e8"
     code_background_color: str = "#f5f5f5"
     code_border_color: str = "#e0e0e0"
+    table_cell_padding: str = "2px"
     line_height: float = 1.6
     margin_top: str = "30mm"
     margin_bottom: str = "30mm"
@@ -112,18 +117,44 @@ def normalize_heading_ids(html: str, level_one: List[Dict[str, str]], anchor: st
     return html, normalized
 
 
-def collect_heading_links(html: str) -> List[Tuple[str, str]]:
+def collect_heading_links(html: str) -> List[Tuple[int, str, str]]:
     """Collect normalized level-two and deeper headings for TOC linking."""
 
-    headings = []
+    headings: List[Tuple[int, str, str]] = []
     for match in re.finditer(
         r"<h([2-6])[^>]*id=\"([^\"]+)\"[^>]*>(.*?)</h\1>",
         html,
         flags=re.IGNORECASE | re.DOTALL,
     ):
+        level = int(match.group(1))
         text = re.sub(r"<[^>]+>", "", match.group(3)).strip()
-        headings.append((match.group(2), text))
+        headings.append((level, match.group(2), text))
     return headings
+
+
+def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
+    """Build a nested unordered list from heading tuples (level, id, text)."""
+
+    if not headings:
+        return ""
+
+    root = {"level": 1, "children": []}
+    stack = [root]
+
+    for level, hid, text in headings:
+        node = {"level": level, "id": hid, "text": text, "children": []}
+        while stack and level <= stack[-1]["level"]:
+            stack.pop()
+        stack[-1]["children"].append(node)
+        stack.append(node)
+
+    def render_nodes(nodes: List[Dict[str, object]]) -> str:
+        return "<ul>" + "".join(
+            f"<li><a href='#{node['id']}'>{node['text']}</a>{render_nodes(node['children'])}</li>"
+            for node in nodes
+        ) + "</ul>"
+
+    return render_nodes(root["children"])
 
 
 def discover_images(
@@ -233,7 +264,8 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
 def build_css(config: BookConfig) -> str:
     header_title = config.header_title or config.title
     escaped_header_title = (header_title or "").replace("'", "\\'")
-    header_content = "string(chapter-title)" if config.header_chapter else f"'{escaped_header_title}'"
+    chapter_header_content = "string(chapter-title)"
+    header_content = chapter_header_content if config.header_chapter else f"'{escaped_header_title}'"
 
     header_footer_css = ""
     if config.header_enabled:
@@ -253,7 +285,7 @@ def build_css(config: BookConfig) -> str:
 
     @page:left {{
         @top-center {{
-            content: '{escaped_header_title}';
+            content: {header_content};
         }}
     }}
 
@@ -292,10 +324,28 @@ def build_css(config: BookConfig) -> str:
         line-height: {config.line_height};
     }}
 
-    h1, h2, h3, h4, h5, h6 {{
+    h1 {{
+        font-family: '{config.heading_font_family}', sans-serif;
+        color: {config.heading_color_h1};
+        margin-top: 1.4em;
+    }}
+
+    h2 {{
+        font-family: '{config.heading_font_family}', sans-serif;
+        color: {config.heading_color_h2};
+        margin-top: 1.4em;
+    }}
+
+    h3 {{
+        font-family: '{config.heading_font_family}', sans-serif;
+        color: {config.heading_color_h3};
+        margin-top: 1.2em;
+    }}
+
+    h4, h5, h6 {{
         font-family: '{config.heading_font_family}', sans-serif;
         color: {config.heading_color};
-        margin-top: 1.4em;
+        margin-top: 1.1em;
     }}
 
     a {{
@@ -322,6 +372,19 @@ def build_css(config: BookConfig) -> str:
         margin-left: 0;
     }}
 
+    table {{
+        border-collapse: collapse;
+        width: 100%;
+    }}
+
+    table, th, td {{
+        border: 1px solid {config.code_border_color};
+    }}
+
+    th, td {{
+        padding: {config.table_cell_padding};
+    }}
+
     .book-title {{
         text-align: center;
         margin-top: 60px;
@@ -332,6 +395,10 @@ def build_css(config: BookConfig) -> str:
         text-align: center;
         color: #666;
         margin-bottom: 40px;
+    }}
+
+    .book-author p {{
+        margin: 0;
     }}
 
     .chapter {{
@@ -353,6 +420,15 @@ def build_css(config: BookConfig) -> str:
     .toc-list li {{
         margin: 6px 0;
     }}
+
+    .toc-list ul {{
+        padding-left: 20px;
+    }}
+
+    .chapter-title {{
+        text-align: center;
+        font-family: '{config.chapter_title_font_family}', sans-serif;
+    }}
     {header_footer_css}
     {config.extra_css}
     """
@@ -364,9 +440,10 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
 
     base_path = chapters[0].source_path.parent
     toc_entries = []
+    author_html = markdown.markdown(config.author, extensions=["attr_list"], output_format="html5")
     body_parts = [
         f"<h1 class='book-title'>{config.title}</h1>",
-        f"<p class='book-author'>{config.author}</p>",
+        f"<div class='book-author'>{author_html}</div>",
     ]
 
     if config.footer_enabled:
@@ -381,10 +458,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
             chapter_entry = f"<li><a href='#{anchor}'>{chapter.title}</a>"
             chapter_headings = collect_heading_links(chapter_html)
             if chapter_headings:
-                subitems = "".join(
-                    f"<li><a href='#{hid}'>{htext}</a></li>" for hid, htext in chapter_headings
-                )
-                chapter_entry += f"<ul>{subitems}</ul>"
+                chapter_entry += build_nested_toc(chapter_headings)
             chapter_entry += "</li>"
             toc_entries.append(chapter_entry)
         body_parts.append(
