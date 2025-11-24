@@ -1,15 +1,15 @@
 import argparse
 import subprocess
 import tempfile
-from dataclasses import dataclass, field
-from pathlib import Path
 import mimetypes
 import re
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+import markdown
 import yaml
 from ebooklib import epub
-from markdown import markdown
 from weasyprint import CSS, HTML
 
 
