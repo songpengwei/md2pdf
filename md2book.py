@@ -183,9 +183,14 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
             children_html = render_children(node["children"])
 
             if node["level"] == 1:
-                html_parts.append(
-                    f"<h3><a href='#{node['id']}'>{node['text']}</a></h3>{children_html}"
-                )
+                if len(node["children"]) == 0:
+                    html_parts.append(
+                        f"<h2><a href='#{node['id']}'>{node['text']}</a></h2>{children_html}"
+                    )
+                else:
+                    html_parts.append(
+                        f"<h3><a href='#{node['id']}'>{node['text']}</a></h3>{children_html}"
+                    )
             else:
                 html_parts.append(
                     f"<li><a href='#{node['id']}'>{node['text']}</a>{children_html}</li>"
@@ -688,7 +693,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
 
     if config.toc:
         toc_html = (
-            "<div class='toc'><div class='toc-title'>章节目录</div>"
+            "<div class='toc'>"
             + build_nested_toc(toc_headings)
             + "</div>"
         )
