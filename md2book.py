@@ -700,15 +700,6 @@ def convert_to_pdf(
 def convert_to_epub(
     chapters: Sequence[Chapter], config: BookConfig, css: str, output_path: Path
 ) -> None:
-    def wrap_xhtml(body: str) -> str:
-        return (
-            "<?xml version='1.0' encoding='utf-8'?>"
-            "<!DOCTYPE html>"
-            "<html xmlns='http://www.w3.org/1999/xhtml'>"
-            "<head><meta charset='utf-8'/></head>"
-            f"<body>{body}</body></html>"
-        )
-
     book = epub.EpubBook()
     book.set_title(config.title)
     book.set_language(config.language)
@@ -730,7 +721,24 @@ def convert_to_epub(
     epub_chapters = []
     added_resources: Dict[Path, epub.EpubItem] = {}
     for idx, chapter in enumerate(chapters, start=1):
-        chapter_html = wrap_xhtml(chapter.html)
+        # ---- 新增/调整部分开始 ----
+        chapter_html = chapter.html or ""
+        chapter_html = chapter_html.strip()
+
+        # 如果章节内容是空的，至少插一个 h1，避免 lxml 报 Document is empty
+        if not chapter_html:
+            safe_title = html.escape(chapter.title)
+            chapter_html = f"<h1 id='{chapter.anchor}'>{safe_title}</h1>"
+        # 如果有内容但没有我们用的 chapter-title 类，可以顺便补一个标题（可选）
+        elif "chapter-title" not in chapter_html:
+            safe_title = html.escape(chapter.title)
+            chapter_html = (
+                f"<h1 id='{chapter.anchor}' class='chapter-title'>{safe_title}</h1>"
+                + chapter_html
+            )
+        # ---- 新增/调整部分结束 ----
+
+        # 图片发现逻辑保持不变，只是用处理后的 chapter_html
         for original_src, resource in discover_images(
             chapter_html, chapter.source_path.parent, added_resources
         ):
@@ -753,6 +761,7 @@ def convert_to_epub(
     book.add_item(epub.EpubNav())
 
     epub.write_epub(str(output_path), book)
+
 
 
 def convert_to_mobi(epub_path: Path, output_path: Path) -> None:
