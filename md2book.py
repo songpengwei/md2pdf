@@ -600,12 +600,6 @@ def build_css(config: BookConfig) -> str:
         order: 2;
     }}
 
-    .page-number-reset {{
-        counter-reset: page 0;
-        display: block;
-        height: 0;
-    }}
-
     .chapter-title {{
         text-align: center;
         font-family:
@@ -702,7 +696,6 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
             toc_insert_index,
             toc_html.replace("class='toc'", "class='toc no-page-number'"),
         )
-        body_parts.insert(toc_insert_index + 1, "<div class='page-number-reset'></div>")
 
     content = "".join(body_parts)
     return (
