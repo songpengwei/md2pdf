@@ -402,6 +402,8 @@ def build_css(config: BookConfig) -> str:
     }}
 
     body {{
+        margin: 0;
+        padding: 0;
         font-family:
           {config.font_family};
         font-size: {config.base_font_size};
@@ -533,13 +535,27 @@ def build_css(config: BookConfig) -> str:
     }}
 
     .pdf-cover {{
+        page: cover;
         page-break-after: always;
         text-align: center;
+        margin: 0;
+        padding: 0;
     }}
 
     .pdf-cover img {{
-        max-width: 100%;
-        height: auto;
+        width: 100%;
+        height: 100vh;
+        object-fit: cover;
+        display: block;
+    }}
+
+    @page cover {{
+        margin: 0;
+        counter-increment: none;
+        @top-left {{ content: none; }}
+        @top-right {{ content: none; }}
+        @bottom-center {{ content: none; }}
+        @top-center {{ content: none; }}
     }}
 
     .no-page-number {{
@@ -597,7 +613,7 @@ def build_css(config: BookConfig) -> str:
     }}
 
     .toc a::after {{
-        content: target-counter(attr(href), page);
+        content: target-counter(attr(href url), page);
         color: {config.text_color};
         font-variant-numeric: tabular-nums;
         margin-left: 8px;
@@ -651,7 +667,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
         if not cover_path.exists():
             raise FileNotFoundError(f"PDF cover image not found: {cover_path}")
         body_parts.append(
-            f"<div class='pdf-cover no-page-number'><img src='{cover_path.as_uri()}' alt='Book cover'></div>"
+            f"<div class='pdf-cover'><img src='{cover_path.as_uri()}' alt='Book cover'></div>"
         )
 
     body_parts.append(
