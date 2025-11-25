@@ -183,7 +183,7 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
 
             if node["level"] == 1:
                 html_parts.append(
-                    f"<h4><a href='#{node['id']}'>{node['text']}</a></h4>{children_html}"
+                    f"<h3><a href='#{node['id']}'>{node['text']}</a></h3>{children_html}"
                 )
             else:
                 html_parts.append(
@@ -289,7 +289,10 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
         title = (
             level_one[0]["name"] if level_one else path.stem.replace("_", " ").title()
         )
-        anchor_base = slugify_title(title)
+        # Use the file stem as a stable anchor (e.g. ch01, preface)
+        # so that header links end with ch01-style identifiers instead of
+        # title-based slugs which may include localized characters.
+        anchor_base = path.stem.lower()
         anchor_suffix = slug_counts.get(anchor_base, 0)
         slug_counts[anchor_base] = anchor_suffix + 1
         anchor = anchor_base if anchor_suffix == 0 else f"{anchor_base}-{anchor_suffix}"
@@ -374,7 +377,6 @@ def build_css(config: BookConfig) -> str:
     @page {{
         size: {config.page_size};
         margin: {config.margin_top} {config.margin_right} {config.margin_bottom} {config.margin_left};
-        counter-increment: page;
     }}
 
     @page:left {{
@@ -398,7 +400,6 @@ def build_css(config: BookConfig) -> str:
         color: {config.text_color};
         background: {config.background_color};
         line-height: {config.line_height};
-        counter-reset: page 0;
     }}
 
     h1 {{
@@ -571,7 +572,7 @@ def build_css(config: BookConfig) -> str:
     }}
 
     .toc a::after {{
-        content: leader('.') target-counter(attr(href), page);
+        content: " " target-counter(attr(href), page);
         float: right;
         color: {config.text_color};
     }}
