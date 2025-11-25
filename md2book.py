@@ -2,6 +2,7 @@ import argparse
 import html
 import mimetypes
 import re
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
@@ -281,7 +282,7 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
                 "toc",
                 "attr_list",
             ],
-            output_format="html5",
+            output_format="xhtml1",
         )
         html = md.convert(markdown_text)
         toc_tokens = md.toc_tokens or []
@@ -577,6 +578,12 @@ def build_css(config: BookConfig) -> str:
         color: {config.text_color};
     }}
 
+    .page-number-reset {{
+        counter-reset: page 0;
+        display: block;
+        height: 0;
+    }}
+
     .chapter-title {{
         text-align: center;
         font-family:
@@ -673,6 +680,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
             toc_insert_index,
             toc_html.replace("class='toc'", "class='toc no-page-number'"),
         )
+        body_parts.insert(toc_insert_index + 1, "<div class='page-number-reset'></div>")
 
     content = "".join(body_parts)
     return (
@@ -692,6 +700,15 @@ def convert_to_pdf(
 def convert_to_epub(
     chapters: Sequence[Chapter], config: BookConfig, css: str, output_path: Path
 ) -> None:
+    def wrap_xhtml(body: str) -> str:
+        return (
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<!DOCTYPE html>"
+            "<html xmlns='http://www.w3.org/1999/xhtml'>"
+            "<head><meta charset='utf-8'/></head>"
+            f"<body>{body}</body></html>"
+        )
+
     book = epub.EpubBook()
     book.set_title(config.title)
     book.set_language(config.language)
@@ -713,7 +730,7 @@ def convert_to_epub(
     epub_chapters = []
     added_resources: Dict[Path, epub.EpubItem] = {}
     for idx, chapter in enumerate(chapters, start=1):
-        chapter_html = chapter.html
+        chapter_html = wrap_xhtml(chapter.html)
         for original_src, resource in discover_images(
             chapter_html, chapter.source_path.parent, added_resources
         ):
@@ -736,6 +753,31 @@ def convert_to_epub(
     book.add_item(epub.EpubNav())
 
     epub.write_epub(str(output_path), book)
+
+
+def convert_to_mobi(epub_path: Path, output_path: Path) -> None:
+    try:
+        import pypandoc
+
+        pypandoc.convert_file(
+            str(epub_path), format="epub", to="mobi", outputfile=str(output_path)
+        )
+        return
+    except OSError:
+        # pandoc is not installed or not found by pypandoc; fall through to CLI fallback.
+        pass
+    except ImportError:
+        # pypandoc is optional; fallback to the Calibre CLI if available.
+        pass
+
+    converter = shutil.which("ebook-convert")
+    if converter is None:
+        raise FileNotFoundError(
+            "MOBI conversion requires either the pypandoc library (with pandoc installed) "
+            "or Calibre's ebook-convert command. Please install one of them and retry."
+        )
+
+    subprocess.run([converter, str(epub_path), str(output_path)], check=True)
 
 
 def resolve_sources(
@@ -785,7 +827,7 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "-f",
         "--format",
-        choices=["pdf", "epub", "both", "html", "all"],
+        choices=["pdf", "epub", "mobi", "both", "html", "all"],
         default="pdf",
         help="Choose the output format.",
     )
@@ -837,6 +879,8 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
 
         html_content: Optional[str] = None
         base_url: Optional[Path] = None
+        epub_path: Optional[Path] = None
+
         if args.format in {"pdf", "both", "html", "all"}:
             html_content, base_url = render_html(chapters, config)
 
@@ -850,10 +894,19 @@ def main(argv: Optional[Sequence[str]] = None) -> None:
             convert_to_html(html_content, css, html_path, base_url)
             print(f"HTML created at {html_path}")
 
-        if args.format in {"epub", "both", "all"}:
+        if args.format in {"epub", "both", "all", "mobi"}:
             epub_path = args.output.with_suffix(".epub")
             convert_to_epub(chapters, config, css, epub_path)
             print(f"EPUB created at {epub_path}")
+
+        if args.format in {"mobi", "all"}:
+            if epub_path is None:
+                epub_path = args.output.with_suffix(".epub")
+                convert_to_epub(chapters, config, css, epub_path)
+                print(f"EPUB created at {epub_path}")
+            mobi_path = args.output.with_suffix(".mobi")
+            convert_to_mobi(epub_path, mobi_path)
+            print(f"MOBI created at {mobi_path}")
 
     finally:
         if temp_dir is not None:

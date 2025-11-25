@@ -3,3 +3,5 @@ PyYAML==6.0.2
 WeasyPrint>=63.0
 EbookLib==0.18
 tqdm==4.66.4
+pypandoc==1.13
+# External binary needed for MOBI fallback: Calibre's `ebook-convert` (install via your OS package manager)
