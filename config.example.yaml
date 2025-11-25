@@ -26,6 +26,7 @@ margin_left: "20mm"
 margin_right: "20mm"
 page_size: "A4"
 chapter_page_break: true
+chapter_word_included: "DDIA"
 toc: true
 header_enabled: true
 header_title: "Distributed Systems"

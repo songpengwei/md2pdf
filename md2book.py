@@ -32,6 +32,7 @@ class BookConfig:
         '"Microsoft YaHei", "Heiti SC", "Segoe UI", "Helvetica Neue", "Roboto", "Arial", sans-serif'
     )
     chapter_title_font_family: str = heading_font_family
+    chapter_word_included: str = "DDIA"
     table_font_family: str = (
         '"Kaiti SC", "STKaiti", "KaiTi", "KaiTi_GB2312", "DFKai-SB", serif'
     )
@@ -147,7 +148,7 @@ def collect_heading_links(html: str) -> List[Tuple[int, str, str]]:
     return headings
 
 
-def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
+def build_nested_toc(headings: List[Tuple[int, str, str]], config: BookConfig) -> str:
     """Build a nested unordered list from heading tuples (level, id, text)."""
 
     if not headings:
@@ -183,7 +184,7 @@ def build_nested_toc(headings: List[Tuple[int, str, str]]) -> str:
             children_html = render_children(node["children"])
 
             if node["level"] == 1:
-                if len(node["children"]) == 0:
+                if len(node["children"]) == 0 and config.chapter_word_included in node["text"]:
                     html_parts.append(
                         f"<h2><a href='#{node['id']}'>{node['text']}</a></h2>{children_html}"
                     )
@@ -694,7 +695,7 @@ def render_html(chapters: Sequence[Chapter], config: BookConfig) -> Tuple[str, P
     if config.toc:
         toc_html = (
             "<div class='toc'>"
-            + build_nested_toc(toc_headings)
+            + build_nested_toc(toc_headings, config)
             + "</div>"
         )
         body_parts.insert(
@@ -741,24 +742,19 @@ def convert_to_epub(
     epub_chapters = []
     added_resources: Dict[Path, epub.EpubItem] = {}
     for idx, chapter in enumerate(chapters, start=1):
-        # ---- 新增/调整部分开始 ----
         chapter_html = chapter.html or ""
         chapter_html = chapter_html.strip()
 
-        # 如果章节内容是空的，至少插一个 h1，避免 lxml 报 Document is empty
         if not chapter_html:
             safe_title = html.escape(chapter.title)
             chapter_html = f"<h1 id='{chapter.anchor}'>{safe_title}</h1>"
-        # 如果有内容但没有我们用的 chapter-title 类，可以顺便补一个标题（可选）
         elif "chapter-title" not in chapter_html:
             safe_title = html.escape(chapter.title)
             chapter_html = (
                 f"<h1 id='{chapter.anchor}' class='chapter-title'>{safe_title}</h1>"
                 + chapter_html
             )
-        # ---- 新增/调整部分结束 ----
 
-        # 图片发现逻辑保持不变，只是用处理后的 chapter_html
         for original_src, resource in discover_images(
             chapter_html, chapter.source_path.parent, added_resources
         ):

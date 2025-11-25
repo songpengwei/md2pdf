@@ -26,6 +26,7 @@ margin_left: "20mm"
 margin_right: "20mm"
 page_size: "A4"
 chapter_page_break: true
+chapter_word_included: "DDIA"
 toc: true
 header_enabled: true
 header_title: "Distributed Systems"
@@ -41,15 +42,6 @@ footer_html: |
 exclude_pages:
   - README 
   - _sidebar
-  - ch03
-  - ch04
-  - ch05
-  - ch06
-  - ch07
-  - ch08
-  - ch09
-  - ch10
-  - ch11
 extra_css: |
   /* Additional CSS overrides */
   img { max-width: 100%; }

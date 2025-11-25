@@ -1,5 +1,6 @@
 ddia.epub
 ddia.pdf
 ddia.html
+*.jpg
 .vscode
 __pycache__/
