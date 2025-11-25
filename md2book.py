@@ -378,6 +378,7 @@ def build_css(config: BookConfig) -> str:
     @page {{
         size: {config.page_size};
         margin: {config.margin_top} {config.margin_right} {config.margin_bottom} {config.margin_left};
+        counter-increment: page;
     }}
 
     @page:left {{
@@ -506,7 +507,7 @@ def build_css(config: BookConfig) -> str:
 
     .book-title {{
         text-align: center;
-        margin-top: 60px;
+        margin-top: 28px;
         font-size: 2.4em;
     }}
 
@@ -572,10 +573,31 @@ def build_css(config: BookConfig) -> str:
         page-break-after: always;
     }}
 
+    .toc a {{
+        display: flex;
+        align-items: center;
+        width: 100%;
+        gap: 6px;
+    }}
+
+    .toc a::before {{
+        content: "";
+        flex: 1 1 auto;
+        border-bottom: 1px dotted {config.code_border_color};
+        margin: 0 8px;
+        order: 1;
+        position: relative;
+        top: -0.1em;
+    }}
+
     .toc a::after {{
-        content: " " target-counter(attr(href), page);
-        float: right;
+        content: target-counter(attr(href), page);
         color: {config.text_color};
+        font-variant-numeric: tabular-nums;
+        margin-left: 8px;
+        min-width: 28px;
+        text-align: right;
+        order: 2;
     }}
 
     .page-number-reset {{
@@ -761,7 +783,6 @@ def convert_to_epub(
     book.add_item(epub.EpubNav())
 
     epub.write_epub(str(output_path), book)
-
 
 
 def convert_to_mobi(epub_path: Path, output_path: Path) -> None:
