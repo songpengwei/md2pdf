@@ -1,13 +1,13 @@
 # md2book
 
-A simple Python utility that turns Markdown collections into printable or digital books (PDF and EPUB). It can work with local Markdown files/directories or clone a GitHub repository (for example, a Docsify-powered documentation site) and export the result using configurable typography.
+A simple Python utility that turns Markdown collections into printable or digital books (PDF, EPUB, and MOBI). It can work with local Markdown files/directories or clone a GitHub repository (for example, a Docsify-powered documentation site) and export the result using configurable typography.
 
 ## Features
 
 - Accepts local Markdown files/directories or a GitHub repository URL.
 - YAML-based theming for fonts, colors, margins, and page sizing.
 - Automatic table of contents and optional page breaks per chapter.
-- Generates PDF (via WeasyPrint) and EPUB (via EbookLib) outputs.
+- Generates PDF (via WeasyPrint), EPUB (via EbookLib), and MOBI (via pypandoc or Calibre's `ebook-convert`) outputs.
 - Sensible defaults to minimize required configuration.
 
 ## Installation
@@ -19,6 +19,7 @@ pip install -r requirements.txt
 ```
 
 > WeasyPrint may require system libraries such as Cairo, Pango, and gdk-pixbuf. Refer to the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation) if you need to add OS packages on your Linux distribution.
+> MOBI output depends on either `pypandoc` (with the `pandoc` binary installed) or Calibre's `ebook-convert` command-line tool; install one of them alongside the Python requirements.
 
 ## Usage
 
@@ -46,6 +47,12 @@ Process a directory tree of documentation:
 
 ```bash
 python md2book.py ./docs --format epub
+```
+
+Generate a Kindle-friendly MOBI alongside the EPUB:
+
+```bash
+python md2book.py ./docs --format mobi
 ```
 
 Use an image file as the first-page PDF cover:
@@ -77,9 +84,11 @@ Settings are read from a YAML file. If no file is supplied, defaults are used. S
 
 - `book.pdf` — PDF with CSS-driven styling (page size/margins applied via @page rules).
 - `book.epub` — EPUB with embedded CSS and chapters split per Markdown source file.
+- `book.mobi` — MOBI converted from the generated EPUB using pypandoc (with pandoc installed) or `ebook-convert`.
 
 ## Notes
 
 - Markdown conversion relies on the `markdown` package with extensions for fenced code, tables, code highlighting classes, anchors, and attribute lists.
 - Local asset paths (images, etc.) will be resolved relative to the first source directory when generating the PDF. Keep assets alongside your Markdown files for portability.
+- MOBI generation requires either the `pandoc` binary (for use with `pypandoc`) or Calibre's `ebook-convert` on your PATH.
 
