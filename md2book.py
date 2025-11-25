@@ -384,21 +384,25 @@ def build_css(config: BookConfig) -> str:
     @page {{
         size: {config.page_size};
         margin: {config.margin_top} {config.margin_right} {config.margin_bottom} {config.margin_left};
-        counter-increment: page;
+        counter-increment: content-page;
     }}
 
     @page:left {{
         @top-left {{
-            content: counter(page);
+            content: counter(content-page);
             font-size: {config.header_font_size};
         }}
     }}
 
     @page:right {{
         @top-right {{
-            content: counter(page);
+            content: counter(content-page);
             font-size: {config.header_font_size};
         }}
+    }}
+
+    @page chapter:first {{
+        counter-reset: content-page 0;
     }}
 
     body {{
@@ -613,7 +617,7 @@ def build_css(config: BookConfig) -> str:
     }}
 
     .toc a::after {{
-        content: target-counter(attr(href url), page);
+        content: target-counter(attr(href url), content-page);
         color: {config.text_color};
         font-variant-numeric: tabular-nums;
         margin-left: 8px;
