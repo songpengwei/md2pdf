@@ -1,6 +1,8 @@
 ddia.epub
 ddia.pdf
 ddia.html
+ddia-*
 *.jpg
 .vscode
 __pycache__/
+.DS_Store

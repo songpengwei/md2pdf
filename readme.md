@@ -91,4 +91,5 @@ Settings are read from a YAML file. If no file is supplied, defaults are used. S
 - Markdown conversion relies on the `markdown` package with extensions for fenced code, tables, code highlighting classes, anchors, and attribute lists.
 - Local asset paths (images, etc.) will be resolved relative to the first source directory when generating the PDF. Keep assets alongside your Markdown files for portability.
 - MOBI generation requires either the `pandoc` binary (for use with `pypandoc`) or Calibre's `ebook-convert` on your PATH.
+- If you notice that chapter fonts aren’t rendering correctly, change the heading_font_family and chapter_title_font_family in the config to font families that exist on your machine and have complete coverage.
 
