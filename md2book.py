@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Match, Optional, Sequence, Tuple
 
 import markdown
 import yaml
@@ -146,6 +146,28 @@ def collect_heading_links(html: str) -> List[Tuple[int, str, str]]:
         text = re.sub(r"<[^>]+>", "", match.group(3)).strip()
         headings.append((level, match.group(2), text))
     return headings
+
+
+VALID_TAG_NAME = re.compile(r"^[A-Za-z_][\w.:-]*$")
+POSSIBLE_TAG = re.compile(r"<(?P<tag>[^\s/>]+)(?P<rest>[^>]*)>")
+
+
+def escape_invalid_html_tags(content: str) -> str:
+    """Escape malformed HTML-like fragments so EPUB XHTML stays valid."""
+
+    def replace(match: Match[str]) -> str:
+        tag = match.group("tag")
+        # Keep declarations and processing instructions untouched.
+        if tag.startswith(("!", "?")):
+            return match.group(0)
+
+        tag_name = tag.lstrip("/")
+        if VALID_TAG_NAME.match(tag_name):
+            return match.group(0)
+
+        return html.escape(match.group(0))
+
+    return POSSIBLE_TAG.sub(replace, content)
 
 
 def build_nested_toc(headings: List[Tuple[int, str, str]], config: BookConfig) -> str:
@@ -291,6 +313,7 @@ def load_chapters(paths: Sequence[Path]) -> List[Chapter]:
             output_format="xhtml1",
         )
         html = md.convert(markdown_text)
+        html = escape_invalid_html_tags(html)
         toc_tokens = md.toc_tokens or []
         level_one = [token for token in toc_tokens if token.get("level") == 1]
         title = (
